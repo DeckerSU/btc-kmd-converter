@@ -1,0 +1,179 @@
+<!-- File: kmd-exchange-calculator.html (AED added) -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KMD ⇆ BTC ⇆ USD, EUR, RUB, AED Converter</title>
+
+<link rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css"
+      integrity="sha384-LN+7fdVzj6u52u30Kp6M/trliBMCMKTyK833zpbD+pXdCLuTusPj697FH4R/5mcr"
+      crossorigin="anonymous">
+
+<style>
+:root{
+  --bg:#181a1f;--card:#1f232b;--accent:#00c853;--text:#e5e7eb;
+  --hi:rgba(255,255,255,.06);--lo:rgba(0,0,0,.6);
+}
+html,body{height:100%}
+body{background:var(--bg);color:var(--text);
+     font-family:Inter,-apple-system,system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+     display:flex;align-items:center;justify-content:center;padding:2rem;}
+.card-neu{background:var(--card);border-radius:1.5rem;
+  box-shadow:-10px -10px 20px var(--hi),10px 10px 20px var(--lo);
+  padding:2.5rem 2rem;width:min(100%,680px);}
+.card-neu h1{margin-bottom:2rem;text-align:center;font-weight:700;color:var(--accent);}
+.currency-field{display:flex;align-items:center;gap:.8rem;background:var(--card);
+  border-radius:1rem;box-shadow:inset 2px 2px 4px var(--lo), inset -2px -2px 4px var(--hi);
+  padding:.7rem 1rem;transition:.2s;overflow:hidden;}
+.currency-field:focus-within{box-shadow:inset 1px 1px 2px var(--lo), inset -1px -1px 2px var(--hi),
+             0 0 0 2px var(--accent);}
+.currency-field img{flex:0 0 32px;width:32px;height:32px;object-fit:contain;}
+.currency-symbol{font-size:1.25rem;color:var(--accent);width:24px;text-align:center}
+.currency-label{font-weight:600;width:2.8rem}
+.currency-input{flex:1 1 auto;min-width:0;width:100%;text-align:right;border:none;outline:none;
+  background:none;color:var(--text);font-size:1.05rem;font-variant-numeric:tabular-nums;}
+.grid{display:grid;gap:1.25rem;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));}
+.btn-refresh{background:var(--accent);border:none;color:#06121c;font-weight:600;
+  padding:.5rem 1.25rem;border-radius:.8rem;box-shadow:0 3px 8px var(--lo);transition:.2s;}
+.btn-refresh:hover{filter:brightness(1.1)}
+#pairInfo{font-size:.85rem;color:#9ca3af;margin-top:1rem;text-align:center;line-height:1.4}
+#lastUpdated{font-size:.85rem;text-align:right;margin-top:1rem;color:#9ca3af}
+</style>
+</head>
+<body>
+<div class="card-neu shadow">
+  <h1>BTC / KMD Real-Time Fiat Rates</h1>
+
+  <div class="grid">
+    <!-- KMD -->
+    <div class="currency-field">
+      <img src="https://cdn.jsdelivr.net/npm/cryptocurrency-icons@0.16.1/128/color/kmd.png" alt="KMD">
+      <span class="currency-label">KMD</span>
+      <input id="inKMD" class="currency-input" type="number" step="any" min="0" placeholder="0">
+    </div>
+    <!-- BTC -->
+    <div class="currency-field">
+      <img src="https://cdn.jsdelivr.net/npm/cryptocurrency-icons@0.16.1/128/color/btc.png" alt="BTC">
+      <span class="currency-label">BTC</span>
+      <input id="inBTC" class="currency-input" type="number" step="any" min="0" placeholder="0">
+    </div>
+    <!-- USD -->
+    <div class="currency-field">
+      <span class="currency-symbol">$</span><span class="currency-label">USD</span>
+      <input id="inUSD" class="currency-input" type="number" step="any" min="0" placeholder="0">
+    </div>
+    <!-- EUR -->
+    <div class="currency-field">
+      <span class="currency-symbol">€</span><span class="currency-label">EUR</span>
+      <input id="inEUR" class="currency-input" type="number" step="any" min="0" placeholder="0">
+    </div>
+    <!-- RUB -->
+    <div class="currency-field">
+      <span class="currency-symbol">₽</span><span class="currency-label">RUB</span>
+      <input id="inRUB" class="currency-input" type="number" step="any" min="0" placeholder="0">
+    </div>
+    <!-- AED -->
+    <div class="currency-field">
+      <span class="currency-symbol">د.إ</span><span class="currency-label">AED</span>
+      <input id="inAED" class="currency-input" type="number" step="any" min="0" placeholder="0">
+    </div>
+  </div>
+
+  <div id="pairInfo"></div>
+
+  <div class="d-flex justify-content-end gap-3 mt-3">
+    <button id="btnRefresh" class="btn-refresh">Refresh rates</button>
+  </div>
+  <div id="lastUpdated"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-ndDqU0Gzau9qJ1lfW4pNLlhNTkCfHzAVBReH9diLvGRem5+R9g2FzA8ZGN954O5Q"
+        crossorigin="anonymous"></script>
+
+<script>
+(() => {
+  /* ========== STATE ================================================== */
+  const st = { btc:0, kmd:0, eur:0, rub:0, aed:0, busy:false };
+  const ID = { KMD:'inKMD', BTC:'inBTC', USD:'inUSD', EUR:'inEUR', RUB:'inRUB', AED:'inAED' };
+
+  /* ========== ENDPOINTS ============================================== */
+  const kucoin = 'https://api.kucoin.com/api/v1/prices?base=USD';
+  const fxURL  = 'https://open.er-api.com/v6/latest/USD';
+  const cors   = url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+
+  async function loadRates(){
+    try{
+      const [kuc, fx] = await Promise.all([
+        fetch(cors(kucoin)).then(r => r.json()),
+        fetch(fxURL).then(r => r.json())
+      ]);
+
+      st.btc = +kuc.data.BTC;
+      st.kmd = +kuc.data.KMD;
+      st.eur = +fx.rates.EUR;
+      st.rub = +fx.rates.RUB;
+      st.aed = +fx.rates.AED;                        // << new rate
+
+      document.getElementById('lastUpdated').textContent =
+        'Rates updated: ' + new Date().toLocaleString('en-GB');
+
+      document.getElementById('pairInfo').innerHTML =
+        `1&nbsp;KMD&nbsp;=&nbsp;${st.kmd.toFixed(4)}&nbsp;USDT,&nbsp;` +
+        `1&nbsp;BTC&nbsp;=&nbsp;${st.btc.toFixed(2)}&nbsp;USDT (KuCoin).<br>` +
+        `The authors of this calculator are not responsible for the accuracy ` +
+        `of the data provided nor for any decisions made based on it.`;
+    }catch(err){
+      console.error(err);
+      alert('Unable to load rates.');
+    }
+  }
+
+  /* ========== HELPERS =============================================== */
+  const fmt = (v,d) => isFinite(v) ? v.toLocaleString('en-US',{maximumFractionDigits:d,useGrouping:false}) : '';
+  const set = (c,v) => document.getElementById(ID[c]).value = fmt(v, (c==='BTC'||c==='KMD') ? 8 : 4);
+
+  function convert(base, amount){
+    if(!st.btc||!st.kmd||!st.eur||!st.rub||!st.aed) return;
+
+    const usd = ({
+      BTC:a=>a*st.btc,
+      KMD:a=>a*st.kmd,
+      USD:a=>a,
+      EUR:a=>a/st.eur,
+      RUB:a=>a/st.rub,
+      AED:a=>a/st.aed                       // << new branch
+    })[base](amount);
+
+    const out = {
+      USD:usd,
+      EUR:usd*st.eur,
+      RUB:usd*st.rub,
+      AED:usd*st.aed,                       // << new output
+      BTC:usd/st.btc,
+      KMD:usd/st.kmd
+    };
+
+    st.busy=true; for(const [k,v] of Object.entries(out)) if(k!==base) set(k,v); st.busy=false;
+  }
+
+  /* ========== EVENTS ================================================ */
+  document.querySelectorAll('.currency-input').forEach(el=>{
+    el.addEventListener('input',e=>{
+      if(st.busy) return;
+      const val=parseFloat(e.target.value.replace(',','.'));
+      if(!isFinite(val)) return;
+      const cur=Object.keys(ID).find(k=>ID[k]===e.target.id);
+      convert(cur,val);
+    });
+  });
+  document.getElementById('btnRefresh').addEventListener('click',loadRates);
+
+  /* ========== INIT =================================================== */
+  window.addEventListener('DOMContentLoaded',loadRates);
+})();
+</script>
+</body>
+</html>
