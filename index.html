@@ -22,7 +22,8 @@ body{background:var(--bg);color:var(--text);
      display:flex;align-items:center;justify-content:center;padding:2rem;}
 .card-neu{background:var(--card);border-radius:1.5rem;
   box-shadow:-10px -10px 20px var(--hi),10px 10px 20px var(--lo);
-  padding:2.5rem 2rem;width:min(100%,680px);}
+  padding:2.5rem 2rem;width:min(100%,680px);
+}
 .card-neu h1{margin-bottom:2rem;text-align:center;font-weight:700;color:var(--accent);}
 .currency-field{display:flex;align-items:center;gap:.8rem;background:var(--card);
   border-radius:1rem;box-shadow:inset 2px 2px 4px var(--lo), inset -2px -2px 4px var(--hi);
@@ -40,6 +41,24 @@ body{background:var(--bg);color:var(--text);
 .btn-refresh:hover{filter:brightness(1.1)}
 #pairInfo{font-size:.85rem;color:#9ca3af;margin-top:1rem;text-align:center;line-height:1.4}
 #lastUpdated{font-size:.85rem;text-align:right;margin-top:1rem;color:#9ca3af}
+
+@media (max-width: 400px) {
+  .card-neu {
+    /* allow it to shrink to fit the viewport */
+    min-width: auto;
+    width: 100%;
+    padding: 1rem;
+  }
+
+  /* stack all fields vertically */
+  .grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* tighten up gaps so it fits better */
+  .grid { gap: .75rem; }
+}
+
 </style>
 </head>
 <body>
