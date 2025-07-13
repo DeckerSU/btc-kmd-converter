@@ -59,6 +59,12 @@ body{background:var(--bg);color:var(--text);
   .grid { gap: .75rem; }
 }
 
+#loadTip {
+  font-size: .85rem;
+  color: #9ca3af;
+  text-align: center;
+  margin-top: .5rem;
+}
 </style>
 <script defer src="analytics.bundle.js"></script>
 </head>
@@ -107,6 +113,8 @@ body{background:var(--bg);color:var(--text);
     <button id="btnRefresh" class="btn-refresh">Refresh rates</button>
   </div>
   <div id="lastUpdated"></div>
+  <div id="loadTip">If you see “Unable to load rates” when the page loads, please press F5 or click “Refresh rates” before entering values.</div>
+
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"
