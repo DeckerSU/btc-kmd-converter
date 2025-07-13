@@ -212,6 +212,26 @@ async function loadRanges(url) {
   /* ========== STATE ================================================== */
   const st = { btc:0, kmd:0, eur:0, rub:0, aed:0, busy:false };
   const ID = { KMD:'inKMD', BTC:'inBTC', USD:'inUSD', EUR:'inEUR', RUB:'inRUB', AED:'inAED' };
+  /* ========== CACHE =================================================== */
+  const CACHE_KEY = 'ratesCache';
+  {
+    const raw = sessionStorage.getItem(CACHE_KEY);
+    if (raw) {
+      try {
+        const { btc, kmd, eur, rub, aed, ts } = JSON.parse(raw);
+        Object.assign(st, { btc, kmd, eur, rub, aed });
+        document.getElementById('lastUpdated').textContent =
+          'Rates updated: ' + new Date(ts).toLocaleString('en-GB');
+        document.getElementById('pairInfo').innerHTML =
+          `1&nbsp;KMD&nbsp;=&nbsp;${kmd.toFixed(4)}&nbsp;USDT,&nbsp;` +
+          `1&nbsp;BTC&nbsp;=&nbsp;${btc.toFixed(2)}&nbsp;USDT (KuCoin).<br>` +
+          `The authors of this calculator are not responsible for the accuracy ` +
+          `of the data provided nor for any decisions made based on it.`;
+      } catch (e) {
+        console.warn('Bad cached rates – ignored:', e);
+      }
+    }
+  }
 
   /* ========== ENDPOINTS ============================================== */
   const kucoin = 'https://api.kucoin.com/api/v1/prices?base=USD';
@@ -239,6 +259,16 @@ async function loadRanges(url) {
         `1&nbsp;BTC&nbsp;=&nbsp;${st.btc.toFixed(2)}&nbsp;USDT (KuCoin).<br>` +
         `The authors of this calculator are not responsible for the accuracy ` +
         `of the data provided nor for any decisions made based on it.`;
+
+      sessionStorage.setItem(CACHE_KEY, JSON.stringify({
+        btc: st.btc,
+        kmd: st.kmd,
+        eur: st.eur,
+        rub: st.rub,
+        aed: st.aed,
+        ts : Date.now()
+      }));
+
     }catch(err){
       console.error(err);
       alert('Unable to load rates.');
