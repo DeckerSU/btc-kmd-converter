@@ -1,0 +1,25 @@
+{
+  "name":            "KMD & BTC Rates Converter",
+  "short_name":      "KMD2Fiat",
+  "description":     "Convert KMD & BTC to fiat currencies in real time.",
+  "start_url":       "/",
+  "scope":           "/",
+  "display":         "standalone",
+  "orientation":     "portrait",
+  "background_color":"#181a1f",
+  "theme_color":     "#00c853",
+  "icons": [
+    {
+      "src": "/web-app-manifest-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/web-app-manifest-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
