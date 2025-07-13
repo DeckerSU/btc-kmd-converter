@@ -78,7 +78,79 @@ body{background:var(--bg);color:var(--text);
 /* hide RUB until geo-check passes */
 .ru-only { display: none; }
 </style>
+
 <script defer src="analytics.bundle.js"></script>
+<script type="module">
+/* — external dependency for in-browser gzip decompression — */
+import { ungzip } from 'https://cdn.jsdelivr.net/npm/pako@2.1.0/+esm';
+
+/* ---------- helpers ---------- */
+function ipToInt(ip) {
+  const p = ip.split('.');
+  return ((+p[0] << 24) | (+p[1] << 16) | (+p[2] << 8) | (+p[3])) >>> 0;
+}
+
+function binarySearch(ipInt, ranges) {
+  let lo = 0, hi = ranges.length / 2 - 1;
+  while (lo <= hi) {
+    const mid   = (lo + hi) >>> 1;
+    const start = ranges[mid * 2];
+    const end   = ranges[mid * 2 + 1];
+    if (ipInt < start) hi = mid - 1;
+    else if (ipInt > end) lo = mid + 1;
+    else return true;                // inside a Russian block
+  }
+  return false;
+}
+
+async function loadRanges(url) {
+  const buf0 = await fetch(url).then(r => {
+    if (!r.ok) throw new Error(`${url}: ${r.status}`);
+    return r.arrayBuffer();
+  });
+
+  /* Decompress if the file is gzip-compressed */
+  const rawBuf = url.endsWith('.gz')
+    ? ungzip(new Uint8Array(buf0)).buffer
+    : buf0;
+
+  /* Convert big-endian data to native Uint32 values */
+  const dv  = new DataView(rawBuf);
+  const num = dv.byteLength / 8;
+  const arr = new Uint32Array(num * 2);
+  for (let i = 0; i < num; i++) {
+    arr[i * 2]     = dv.getUint32(i * 8,     false); // big-endian
+    arr[i * 2 + 1] = dv.getUint32(i * 8 + 4, false);
+  }
+  return arr;
+}
+
+/* ---------- main flow ---------- */
+(async () => {
+  try {
+    /* 1 – obtain public IPv4 (≤1000 reqs/Origin/day on ipify) */
+    const { ip } = await fetch('https://api.ipify.org?format=json')
+                           .then(r => r.json());
+    if (!ip || ip.includes(':')) return;     // skip IPv6 users
+
+    /* 2 – first try compressed file, fall back to plain binary */
+    let ranges;
+    try {
+      ranges = await loadRanges('/ru-v4.bin.gz');
+    } catch {
+      ranges = await loadRanges('/ru-v4.bin');
+    }
+    /* 3 – reveal ₽ price if IP belongs to Russia */
+    if (binarySearch(ipToInt(ip), ranges)) {
+      document.querySelectorAll('.ru-only')
+              .forEach(el => (el.style.display = 'flex'));
+    }
+  } catch (e) {
+    /* Silent fail: leave RUB elements hidden */
+    console.warn('Geo-lookup failed:', e);
+  }
+})();
+</script>
 </head>
 <body>
 <div class="card-neu shadow">
@@ -213,16 +285,6 @@ body{background:var(--bg);color:var(--text);
 
   /* ========== INIT =================================================== */
   window.addEventListener('DOMContentLoaded',loadRates);
-  /* reveal RUB only for Russian IPs */
-  fetch('https://freegeoip.app/json/')
-    .then(r => r.json())
-    .then(d => {
-      if (d && d.country_code === 'RU') {
-        document.querySelectorAll('.ru-only')
-                .forEach(el => el.style.display = 'flex');
-      }
-    })
-    .catch(() => {}); // silent fail – keep RUB hidden if geo-lookup fails
 })();
 </script>
 </body>
