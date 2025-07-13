@@ -31,7 +31,12 @@
 html,body{height:100%}
 body{background:var(--bg);color:var(--text);
      font-family:Inter,-apple-system,system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-     display:flex;align-items:center;justify-content:center;padding:2rem;}
+     display:flex;align-items:center;justify-content:center;
+     padding: 2rem calc(env(safe-area-inset-left))
+           calc(env(safe-area-inset-bottom))
+           calc(env(safe-area-inset-right));
+     padding-top: calc(2rem + env(safe-area-inset-top));
+     }
 .card-neu{background:var(--card);border-radius:1.5rem;
   box-shadow:-10px -10px 20px var(--hi),10px 10px 20px var(--lo);
   padding:2.5rem 2rem;width:min(100%,680px);
@@ -55,11 +60,21 @@ body{background:var(--bg);color:var(--text);
 #lastUpdated{font-size:.85rem;text-align:right;margin-top:1rem;color:#9ca3af}
 
 @media (max-width: 400px) {
+  body{
+    align-items: flex-start;          /* instead of center */
+    padding-top: calc(1rem + env(safe-area-inset-top));
+  }
+
   .card-neu {
     /* allow it to shrink to fit the viewport */
     min-width: auto;
     width: 100%;
     padding: 1rem;
+  }
+
+  .card-neu h1{
+    font-size: clamp(1.6rem, 7vw + .5rem, 2.2rem);
+    line-height: 1.2;
   }
 
   /* stack all fields vertically */
