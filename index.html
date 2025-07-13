@@ -73,6 +73,10 @@ body{background:var(--bg);color:var(--text);
   text-decoration:none;
 }
 #copyright a:hover{ text-decoration:underline; }
+.rate-val{
+  color: var(--accent, #00c853);
+  font-weight: 600;
+}
 
 @media (max-width: 400px) {
   body{
@@ -244,6 +248,9 @@ async function loadRanges(url) {
 
 <script>
 (() => {
+  const noticeText =
+  'The authors of this calculator are not responsible for the accuracy ' +
+  'of the data provided nor for any decisions made based on it.';
   /* ========== STATE ================================================== */
   const st = { btc:0, kmd:0, eur:0, rub:0, aed:0, busy:false };
   const ID = { KMD:'inKMD', BTC:'inBTC', USD:'inUSD', EUR:'inEUR', RUB:'inRUB', AED:'inAED' };
@@ -259,10 +266,9 @@ async function loadRanges(url) {
           'Rates updated: ' + new Date(ts).toLocaleString('en-GB');
         // console.log("Cache restored: " + new Date(ts).toLocaleString('en-GB'));
         document.getElementById('pairInfo').innerHTML =
-          `1&nbsp;KMD&nbsp;=&nbsp;${kmd.toFixed(4)}&nbsp;USDT,&nbsp;` +
-          `1&nbsp;BTC&nbsp;=&nbsp;${btc.toFixed(2)}&nbsp;USDT (KuCoin).<br>` +
-          `The authors of this calculator are not responsible for the accuracy ` +
-          `of the data provided nor for any decisions made based on it.`;
+          `1&nbsp;KMD&nbsp;=&nbsp;<span class="rate-val">${st.kmd.toFixed(4)}</span>&nbsp;USDT,&nbsp;` +
+          `1&nbsp;BTC&nbsp;=&nbsp;<span class="rate-val">${st.btc.toFixed(2)}</span>&nbsp;USDT (KuCoin).<br>` +
+          noticeText;
       } catch (e) {
         console.warn('Bad cached rates – ignored:', e);
       }
@@ -293,10 +299,9 @@ async function loadRanges(url) {
       // console.log("Rates updated: " + new Date().toLocaleString('en-GB'));
 
       document.getElementById('pairInfo').innerHTML =
-        `1&nbsp;KMD&nbsp;=&nbsp;${st.kmd.toFixed(4)}&nbsp;USDT,&nbsp;` +
-        `1&nbsp;BTC&nbsp;=&nbsp;${st.btc.toFixed(2)}&nbsp;USDT (KuCoin).<br>` +
-        `The authors of this calculator are not responsible for the accuracy ` +
-        `of the data provided nor for any decisions made based on it.`;
+        `1&nbsp;KMD&nbsp;=&nbsp;<span class="rate-val">${st.kmd.toFixed(4)}</span>&nbsp;USDT,&nbsp;` +
+        `1&nbsp;BTC&nbsp;=&nbsp;<span class="rate-val">${st.btc.toFixed(2)}</span>&nbsp;USDT (KuCoin).<br>` +
+        noticeText;
 
       sessionStorage.setItem(CACHE_KEY, JSON.stringify({
         btc: st.btc,
