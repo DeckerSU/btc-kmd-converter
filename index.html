@@ -75,6 +75,8 @@ body{background:var(--bg);color:var(--text);
   text-align: center;
   margin-top: .5rem;
 }
+/* hide RUB until geo-check passes */
+.ru-only { display: none; }
 </style>
 <script defer src="analytics.bundle.js"></script>
 </head>
@@ -106,7 +108,7 @@ body{background:var(--bg);color:var(--text);
       <input id="inEUR" class="currency-input" type="number" step="any" min="0" placeholder="0">
     </div>
     <!-- RUB -->
-    <div class="currency-field">
+    <div class="currency-field ru-only">
       <span class="currency-symbol">₽</span><span class="currency-label">RUB</span>
       <input id="inRUB" class="currency-input" type="number" step="any" min="0" placeholder="0">
     </div>
@@ -211,6 +213,16 @@ body{background:var(--bg);color:var(--text);
 
   /* ========== INIT =================================================== */
   window.addEventListener('DOMContentLoaded',loadRates);
+  /* reveal RUB only for Russian IPs */
+  fetch('https://ipapi.co/json/')
+    .then(r => r.json())
+    .then(d => {
+      if (d && d.country_code === 'RU') {
+        document.querySelectorAll('.ru-only')
+                .forEach(el => el.style.display = 'flex');
+      }
+    })
+    .catch(() => {}); // silent fail – keep RUB hidden if geo-lookup fails
 })();
 </script>
 </body>
