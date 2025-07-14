@@ -113,6 +113,17 @@ body{background:var(--bg);color:var(--text);
 }
 /* hide RUB until geo-check passes */
 .ru-only { display: none; }
+
+/* --- spinner overlay --- */
+.loading-overlay{
+  position:absolute;
+  inset:0;
+  background:rgba(0,0,0,.4);
+  backdrop-filter:blur(2px);
+  display:none;
+  z-index:10;
+}
+
 </style>
 
 <script defer src="analytics.bundle.js"></script>
@@ -189,9 +200,8 @@ async function loadRanges(url) {
 </script>
 </head>
 <body>
-<div class="card-neu shadow">
+<div class="card-neu shadow position-relative">
   <h1>BTC / KMD Real-Time Fiat Rates</h1>
-
   <div class="grid">
     <!-- KMD -->
     <div class="currency-field">
@@ -239,7 +249,12 @@ async function loadRanges(url) {
       <a href="https://github.com/DeckerSU/btc-kmd-converter" target="_blank" rel="noopener">
         source&nbsp;code
       </a>
-    </div>
+  </div>
+  <div id="loadingOverlay"
+      class="loading-overlay flex-column justify-content-center align-items-center gap-2">
+    <div class="spinner-border text-success" role="status"></div>
+    <div class="text-light fw-medium">Loading…</div>
+  </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"
@@ -251,6 +266,7 @@ async function loadRanges(url) {
   const noticeText =
   'The authors of this calculator are not responsible for the accuracy ' +
   'of the data provided nor for any decisions made based on it.';
+  const overlay = document.getElementById('loadingOverlay');
   /* ========== STATE ================================================== */
   const st = { btc:0, kmd:0, eur:0, rub:0, aed:0, busy:false };
   const ID = { KMD:'inKMD', BTC:'inBTC', USD:'inUSD', EUR:'inEUR', RUB:'inRUB', AED:'inAED' };
@@ -294,6 +310,7 @@ async function loadRanges(url) {
   }
 
   async function loadRates(){
+    overlay.style.display = 'flex';
     try{
       const [kuc, fx] = await Promise.all([
         fetchKuCoin(),
@@ -328,6 +345,8 @@ async function loadRanges(url) {
     }catch(err){
       console.error(err);
       alert('Unable to load rates.');
+    }finally{
+      overlay.style.display = 'none';
     }
   }
 
