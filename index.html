@@ -253,7 +253,9 @@ async function loadRanges(url) {
   <div id="loadingOverlay"
       class="loading-overlay flex-column justify-content-center align-items-center gap-2">
     <div class="spinner-border text-success" role="status"></div>
-    <div class="text-light fw-medium">Loading…</div>
+      <div class="text-light fw-medium">
+        Loading… <span id="loadCountdown">10</span>
+      </div>
   </div>
 </div>
 
@@ -266,7 +268,10 @@ async function loadRanges(url) {
   const noticeText =
   'The authors of this calculator are not responsible for the accuracy ' +
   'of the data provided nor for any decisions made based on it.';
+
   const overlay = document.getElementById('loadingOverlay');
+  const loadCountdown = document.getElementById('loadCountdown');
+
   /* ========== STATE ================================================== */
   const st = { btc:0, kmd:0, eur:0, rub:0, aed:0, busy:false };
   const ID = { KMD:'inKMD', BTC:'inBTC', USD:'inUSD', EUR:'inEUR', RUB:'inRUB', AED:'inAED' };
@@ -297,20 +302,36 @@ async function loadRanges(url) {
   const fallbackApiUrl = 'https://api-kmd.decker.im/prices';
   const cors   = url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
 
+  function startCountdown(sec = 10){
+    let t = sec;
+    loadCountdown.textContent = t;
+    return setInterval(() => {
+      t--;
+      loadCountdown.textContent = t;
+      if (t <= 0) clearInterval(timerID);
+    }, 1000);
+  }
+
   async function fetchKuCoin() {
+    const controller = new AbortController();
+    const timer      = setTimeout(() => controller.abort(), 10_000);
+    // controller.signal.addEventListener('abort', () => loadCountdown.textContent = '0');
     try {
-      const r = await fetch(cors(kucoin));
+      const r = await fetch(cors(kucoin), { signal: controller.signal });
+      clearTimeout(timer);
       if (!r.ok) throw new Error('bad status');
       return await r.json();
     } catch (e) {
       // fallback API
-      console.warn('CORS proxy failed, switching to fallback API:', e);
+      clearTimeout(timer);
+      console.warn('CORS proxy failed or timed out, switching to fallback API:', e);
       return fetch(fallbackApiUrl).then(r => r.json());
     }
   }
 
   async function loadRates(){
     overlay.style.display = 'flex';
+    const timerID = startCountdown(10);
     try{
       const [kuc, fx] = await Promise.all([
         fetchKuCoin(),
@@ -346,6 +367,7 @@ async function loadRanges(url) {
       console.error(err);
       alert('Unable to load rates.');
     }finally{
+      clearInterval(timerID);
       overlay.style.display = 'none';
     }
   }
