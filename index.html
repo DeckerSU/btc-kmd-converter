@@ -278,12 +278,25 @@ async function loadRanges(url) {
   /* ========== ENDPOINTS ============================================== */
   const kucoin = 'https://api.kucoin.com/api/v1/prices?base=USD';
   const fxURL  = 'https://open.er-api.com/v6/latest/USD';
+  const fallbackApiUrl = 'https://api-kmd.decker.im/prices';
   const cors   = url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+
+  async function fetchKuCoin() {
+    try {
+      const r = await fetch(cors(kucoin));
+      if (!r.ok) throw new Error('bad status');
+      return await r.json();
+    } catch (e) {
+      // fallback API
+      console.warn('CORS proxy failed, switching to fallback API:', e);
+      return fetch(fallbackApiUrl).then(r => r.json());
+    }
+  }
 
   async function loadRates(){
     try{
       const [kuc, fx] = await Promise.all([
-        fetch(cors(kucoin)).then(r => r.json()),
+        fetchKuCoin(),
         fetch(fxURL).then(r => r.json())
       ]);
 
